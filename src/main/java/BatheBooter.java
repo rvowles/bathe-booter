@@ -22,7 +22,7 @@ import java.util.jar.Manifest;
  *
  * Thanks to Karsten Sperling for the idea of embedding the jars into subdirectories and loading them into the URL classpath from there.
  */
-public class BatheRunner {
+public class BatheBooter {
   private static final String WEB_JAR_PREFIX = "WEB-INF/jars/";
   private static final String WEB_CLASSES_PREFIX = "WEB-INF/classes/";
 
@@ -99,6 +99,8 @@ public class BatheRunner {
           break;
         }
       }
+
+	    System.out.println("jump class " + runnerClass);
     } catch (IOException iex) {
 
     }
@@ -106,7 +108,7 @@ public class BatheRunner {
   }
 
   public static void main(String []args) throws IOException {
-    new BatheRunner().run(args);
+    new BatheBooter().run(args);
   }
 
   public void run(String []args) throws IOException {
@@ -181,7 +183,7 @@ public class BatheRunner {
 
       runner.getMethod("run", File.class, String[].class).invoke(null, runnable, args);
     } catch (ClassNotFoundException e) {
-      throw new RuntimeException("The class you are trying to run can not be found on the classpath: " + runnerClass, e);
+      throw new RuntimeException("The class you are trying to run can not be found on the classpath: " + runnerClass + ", " + loader.toString(), e);
     } catch (NoSuchMethodException e) {
       throw new RuntimeException("Can't find the run method in the run class", e);
     } catch (IllegalAccessException e) {
@@ -208,10 +210,14 @@ public class BatheRunner {
         urls.add(new URL(jarPrefix + WEB_CLASSES_PREFIX));
 
       for (String jar : libraries) {
-        URL newLibraryOffset = new URL(jarPrefix + WEB_JAR_PREFIX + jar + "/");
+        URL newLibraryOffset = new URL(jarPrefix + WEB_JAR_PREFIX + jar + "/" );
+
+	      System.out.println("url " + newLibraryOffset.toString());
 
         urls.add(newLibraryOffset);
       }
+
+
     } catch (MalformedURLException e) {
       throw new RuntimeException("Unable to create JAR/WAR class path", e);
     }

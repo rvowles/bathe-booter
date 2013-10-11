@@ -1,7 +1,6 @@
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -13,16 +12,16 @@ import static org.fest.assertions.Assertions.*;
 public class BatheRunnerTest {
   @Before
   public void initial() {
-    System.clearProperty(BatheRunner.BATHE_JAR_ORDER_OVERRIDE);
+    System.clearProperty(BatheBooter.BATHE_JAR_ORDER_OVERRIDE);
   }
 
   @Test
   public void ensureClasspathIsSortedWithPatchesUpFront() {
-    System.setProperty(BatheRunner.BATHE_JAR_ORDER_OVERRIDE, "my-patch, your-patch, his-patch");
+    System.setProperty(BatheBooter.BATHE_JAR_ORDER_OVERRIDE, "my-patch, your-patch, his-patch");
 
     List<String> files = Arrays.asList("your-patch", "logback-1.2.3", "his-56-patch", "slf4j-1-7.1", "his-patch-778", "groovy-2.1.10", "servlet-3", "my-patch-1.56");
 
-    new BatheRunner().determineSorting(files);
+    new BatheBooter().determineSorting(files);
 
     assertThat(files.get(0)).isEqualTo("my-patch-1.56");
     assertThat(files.get(1)).isEqualTo("your-patch");
@@ -31,7 +30,7 @@ public class BatheRunnerTest {
 
   @Test
   public void parameterParsing() {
-    BatheRunner batheRunner = new BatheRunner() {
+    BatheBooter batheRunner = new BatheBooter() {
       @Override
       protected void attemptToGetJumpClassFromManifest() {
         this.runnerClass = "woopsie";
