@@ -32,6 +32,7 @@ public class BatheBooter {
   private static final String JUMP_CLASS = "Jump-Class";
   protected static final String BATHE_INITIALIZER = "bathe.initializers";
   protected static final String BATHE_JAR_ORDER_OVERRIDE = "bathe.jarOrderOverride";
+  protected static final String BATHE_EXTERNAL_CLASSPATH = "bathe.externalClassPath";
 
   protected String runnerClass;
   protected File jar;
@@ -210,6 +211,8 @@ public class BatheBooter {
         urls.add(new URL(jarPrefix + WEB_CLASSES_PREFIX));
 
       for (String jar : libraries) {
+	      // the trailing / is extremely important, if it isn't there, it treats it as a JarLoader and fails
+	      // to load it as it changes the url to jar:jar:file:!/blah!/
         URL newLibraryOffset = new URL(jarPrefix + WEB_JAR_PREFIX + jar + "/" );
 
 	      System.out.println("url " + newLibraryOffset.toString());
@@ -217,6 +220,12 @@ public class BatheBooter {
         urls.add(newLibraryOffset);
       }
 
+	    String externalClasspath = System.getProperty(BATHE_EXTERNAL_CLASSPATH);
+	    if (externalClasspath != null) {
+		    for(String cp : externalClasspath.split(",")) {
+			    urls.add(new URL(cp.trim()));
+		    }
+	    }
 
     } catch (MalformedURLException e) {
       throw new RuntimeException("Unable to create JAR/WAR class path", e);
