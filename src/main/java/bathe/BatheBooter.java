@@ -1,4 +1,4 @@
-
+package bathe;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -30,8 +30,6 @@ public class BatheBooter {
   private static final String MINUS_P = "-P";
   private static final String MAIN_OVERRIDE = "-R";
   private static final String JUMP_CLASS = "Jump-Class";
-  protected static final String BATHE_INITIALIZER = "bathe.initializers";
-  protected static final String BATHE_JAR_ORDER_OVERRIDE = "bathe.jarOrderOverride";
   protected static final String BATHE_EXTERNAL_CLASSPATH = "bathe.externalClassPath";
 
   protected String runnerClass;
@@ -101,7 +99,6 @@ public class BatheBooter {
         }
       }
 
-	    System.out.println("jump class " + runnerClass);
     } catch (IOException iex) {
 
     }
@@ -124,7 +121,7 @@ public class BatheBooter {
     Thread.currentThread().setContextClassLoader(loader);
 
     try {
-      checkForInitializers(loader);
+      checkForInitializers(loader, passingArgs);
 
       // Start the application
       exec(loader, jar, runnerClass, passingArgs);
@@ -135,25 +132,12 @@ public class BatheBooter {
     }
   }
 
-  //  Run any initializers. (e.g. liquibase)
-  protected void checkForInitializers(ClassLoader loader) {
-    String initializers = System.getProperty(BATHE_INITIALIZER);
+  //  Run any initializers.
+  protected void checkForInitializers(ClassLoader loader, String[] args) {
+	  ServiceLoader<BatheInitializer> services = ServiceLoader.load(BatheInitializer.class, loader);
 
-    System.out.println("Initializer is " + initializers);
-
-    if (initializers != null) {
-      String inits[] = initializers.trim().split(",");
-
-      for (String className : inits) {
-        try {
-          Class clazz = Class.forName(className, true, loader);
-          Object i = clazz.newInstance();
-          Method m = getMethod(i, clazz, "init");
-          m.invoke(i);
-        } catch (Exception ex) {
-          throw new RuntimeException(String.format("Failed to initialize due to missing class '%s'", className), ex);
-        }
-      }
+    for(BatheInitializer initializer: services) {
+	    initializer.initialize(args);
     }
   }
 
@@ -174,7 +158,32 @@ public class BatheBooter {
     return values;
   }
 
-  /**
+	private boolean tryRunMethod(Class<?> runner, File runnable, String[] args) throws InvocationTargetException, IllegalAccessException {
+		try {
+			Method method = runner.getMethod("run", File.class, String[].class);
+
+			method.invoke(null, runnable, args);
+		} catch (NoSuchMethodException e) {
+			return false;
+		}
+
+		return true;
+	}
+
+	private boolean tryMainMethod(Class<?> runner, String[] args) throws InvocationTargetException, IllegalAccessException {
+		try {
+			Method method = runner.getMethod("main", String[].class);
+
+			// force to Object so it doesn't  try to use ...
+			method.invoke(null, (Object)args);
+		} catch (NoSuchMethodException e) {
+			return false;
+		}
+
+		return true;
+	}
+
+	/**
    * Runs the main runner class in the specified class loader, passing in
    * the WAR being run as well as the specified command line arguments.
    */
@@ -182,11 +191,14 @@ public class BatheBooter {
     try {
       Class<?> runner = Class.forName(runnerClass, true, loader);
 
-      runner.getMethod("run", File.class, String[].class).invoke(null, runnable, args);
+	    if (!tryRunMethod(runner, runnable, args)) {
+		    if (!tryMainMethod(runner, args)) {
+			    throw new RuntimeException("Cannot find run or main method in " + runnerClass);
+		    }
+	    }
+
     } catch (ClassNotFoundException e) {
       throw new RuntimeException("The class you are trying to run can not be found on the classpath: " + runnerClass + ", " + loader.toString(), e);
-    } catch (NoSuchMethodException e) {
-      throw new RuntimeException("Can't find the run method in the run class", e);
     } catch (IllegalAccessException e) {
       throw new RuntimeException("Run method needs to be public and static", e);
     } catch (InvocationTargetException e) {
@@ -205,7 +217,16 @@ public class BatheBooter {
     try {
       urls = new ArrayList<URL>();
 
-      String jarPrefix = "jar:" + war.toURI().toString() + "!/";
+	    // external classpaths first
+	    String externalClasspath = System.getProperty(BATHE_EXTERNAL_CLASSPATH);
+	    if (externalClasspath != null) {
+		    for(String cp : externalClasspath.split(",")) {
+			    urls.add(new URL(cp.trim()));
+		    }
+	    }
+
+	    // now internal classpaths
+	    String jarPrefix = "jar:" + war.toURI().toString() + "!/";
 
       if (foundClassDir)
         urls.add(new URL(jarPrefix + WEB_CLASSES_PREFIX));
@@ -215,17 +236,8 @@ public class BatheBooter {
 	      // to load it as it changes the url to jar:jar:file:!/blah!/
         URL newLibraryOffset = new URL(jarPrefix + WEB_JAR_PREFIX + jar + "/" );
 
-	      System.out.println("url " + newLibraryOffset.toString());
-
         urls.add(newLibraryOffset);
       }
-
-	    String externalClasspath = System.getProperty(BATHE_EXTERNAL_CLASSPATH);
-	    if (externalClasspath != null) {
-		    for(String cp : externalClasspath.split(",")) {
-			    urls.add(new URL(cp.trim()));
-		    }
-	    }
 
     } catch (MalformedURLException e) {
       throw new RuntimeException("Unable to create JAR/WAR class path", e);
@@ -272,57 +284,11 @@ public class BatheBooter {
       } finally {
         archive.close();
       }
-
-      determineSorting(jars);
-
       return Collections.unmodifiableList(jars);
     } catch (IOException e) {
       throw new RuntimeException("Unable to determine the extracted jar files in the jar/war", e);
     }
   }
-
-  public void determineSorting(List<String> jars) {
-    String jarOrderOverride = System.getProperty(BATHE_JAR_ORDER_OVERRIDE);
-
-    if (jarOrderOverride == null) return;
-
-    final List<String> order = new ArrayList<>();
-    for(String orderingElement : jarOrderOverride.trim().split((","))) {
-      order.add(orderingElement.trim());
-    }
-
-    Collections.sort(jars, new Comparator<String>() {
-      @Override
-      public int compare(String s1, String s2) {
-
-        int s1Pos = findPartial(s1, order);
-        int s2Pos = findPartial(s2, order);
-
-        if (s1Pos < s2Pos) return -1;
-        if (s1Pos == s2Pos) return 0;
-        if (s1Pos > s2Pos) return 1;
-
-        return 0;
-      }
-    });
-  }
-
-  public int findPartial(String jarName, List<String> order) {
-    for(int count = 0, max = order.size(); count < max; count ++) {
-//      System.out.print(jarName + " contains " + order.get(count) + ": ");
-      if (jarName.contains(order.get(count))) {
-        int val = ((order.size() - count) * -1) - 1;
-//        System.out.println("yes " + order.get(count) + "/" + jarName + " = " + val);
-        return val;
-      }
-//      System.out.print("no, ");
-    }
-
-//    System.out.println("no match " + jarName + " 0");
-
-    return 0;
-  }
-
 
   /**
    * This may end up needing to be more sophisticated if there is more than one jar on the command line. We would need to looking through
@@ -353,17 +319,10 @@ public class BatheBooter {
     return ((URLClassLoader) loader).getURLs();
   }
 
-  protected  Method getMethod(Object object, Class<?> clazz, String name, Class<?>... params) throws NoSuchMethodException {
-    if (params.length > 0)
-      return clazz.getMethod(name, params);
-    else
-      return clazz.getMethod(name);
-  }
 
   /**
-   * Ensure that two are not the same
+   * This allows us to fail fast for duplicate system properties
    */
-
   protected static final class DuplicateProperties extends Properties {
 
     @Override
