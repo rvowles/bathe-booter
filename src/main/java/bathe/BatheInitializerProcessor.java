@@ -31,12 +31,12 @@ public class BatheInitializerProcessor {
 	}
 
 	//  Run any initializers.
-	public void process(String[] args, ClassLoader loader) {
+	public void process(String[] args, String jumpClass, ClassLoader loader) {
 		collectInitializers(loader);
 
 		for(BatheInitializer initializer: initializers) {
 			if (System.getProperty(BATHE_INITIALIZER_DISABLE + initializer.getName()) == null) {
-				initializer.initialize(args);
+				initializer.initialize(args, jumpClass);
 			}
 		}
 	}

@@ -18,7 +18,9 @@ public class SampleInitializer implements BatheInitializer {
 	}
 
 	@Override
-	public void initialize(String[] args) {
+	public String[] initialize(String[] args, String jumpClass) {
 		value = true;
+
+		return args;
 	}
 }

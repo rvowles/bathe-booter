@@ -29,6 +29,7 @@ public interface BatheInitializer {
 	 * Called when it is this initializer's turn to run.
 	 *
 	 * @param args - the arguments passed to the application (rather than the boioter)
+	 * @returns - the args that will be passed on to the next initializer. This allows initializers to consume arguments
 	 */
-	public void initialize(String args[]);
+	public String[] initialize(String args[], String jumpClass);
 }

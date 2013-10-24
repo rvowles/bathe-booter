@@ -18,6 +18,9 @@ import java.util.jar.Manifest;
 
 
 /**
+ * This class takes the jar/war in the classpath, figures out what the classpath is, creates a new URL class loader,
+ * loads any BatheInitializer services in the right order according to precedence and then jumps in.
+ *
  * author: Richard Vowles - http://gplus.to/RichardVowles
  *
  * Thanks to Karsten Sperling for the idea of embedding the jars into subdirectories and loading them into the URL classpath from there.
@@ -26,8 +29,6 @@ public class BatheBooter {
   private static final String WEB_JAR_PREFIX = "WEB-INF/jars/";
   private static final String WEB_CLASSES_PREFIX = "WEB-INF/classes/";
 
-  private static final String MINUS_D = "-D";
-  private static final String MINUS_P = "-P";
   private static final String MAIN_OVERRIDE = "-R";
   private static final String JUMP_CLASS = "Jump-Class";
   protected static final String BATHE_EXTERNAL_CLASSPATH = "bathe.externalClassPath";
@@ -42,17 +43,7 @@ public class BatheBooter {
 
     // Process command line arguments
     for (String arg : args) {
-      if (arg.startsWith(MINUS_D)) {
-        String property = arg.substring(MINUS_D.length());
-        int equals = property.indexOf('=');
-        if (equals >= 0)
-          System.setProperty(property.substring(0, equals), property.substring(equals + 1));
-        else
-          System.setProperty(property, Boolean.TRUE.toString());
-      } else if (arg.startsWith(MINUS_P)) {
-        File properties = new File(arg.substring(MINUS_P.length()));
-        System.getProperties().putAll(loadProperties(properties, false));
-      } else if (arg.startsWith(MAIN_OVERRIDE)) {
+      if (arg.startsWith(MAIN_OVERRIDE)) {
         runnerClass = arg.substring(MAIN_OVERRIDE.length());
       } else
         appArguments.add(arg);
@@ -67,8 +58,6 @@ public class BatheBooter {
         "Usage: java -jar " + jar.getName() + " [options]\n" +
           "\n" +
           "Arguments:\n" +
-          "  " + MINUS_D + "<name>=<value>    set system property\n" +
-          "  " + MINUS_P + "<file>            load the properties file into system properties (no duplicates)\n" +
           "  " + MAIN_OVERRIDE + "<class-name>      specify the main class.\n" +
           "  \n" +
           "Specify Jump-Class: in your /META-INF/MANIFEST.MF to automatically define a class to run");
@@ -121,7 +110,7 @@ public class BatheBooter {
     Thread.currentThread().setContextClassLoader(loader);
 
     try {
-      new BatheInitializerProcessor().process(passingArgs, loader);
+      new BatheInitializerProcessor().process(passingArgs, runnerClass, loader);
 
       // Start the application
       exec(loader, jar, runnerClass, passingArgs);
@@ -132,22 +121,6 @@ public class BatheBooter {
     }
   }
 
-  protected Properties loadProperties(File file, boolean optional) {
-    Properties values = new DuplicateProperties();
-    if (!optional || file.exists()) {
-      try {
-        InputStream is = new FileInputStream(file);
-        try {
-          values.load(is);
-        } finally {
-          is.close();
-        }
-      } catch (IOException e) {
-        throw new RuntimeException(String.format("Failed to read properties file '%s'", file), e);
-      }
-    }
-    return values;
-  }
 
 	private boolean tryRunMethod(Class<?> runner, File runnable, String[] args) throws InvocationTargetException, IllegalAccessException {
 		try {
@@ -311,20 +284,4 @@ public class BatheBooter {
   }
 
 
-  /**
-   * This allows us to fail fast for duplicate system properties
-   */
-  protected static final class DuplicateProperties extends Properties {
-
-    @Override
-    public synchronized Object put(Object key, Object value) {
-      Object previous = super.put(key, value);
-
-      if (previous != null) {
-        throw new IllegalStateException(String.format("Key '%s' has duplicate values as %s and %s", key, previous.toString(), value.toString()));
-      }
-
-      return null;
-    }
-  }
 }

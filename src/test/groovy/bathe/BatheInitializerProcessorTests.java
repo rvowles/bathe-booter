@@ -19,7 +19,7 @@ public class BatheInitializerProcessorTests {
 
 		String[] args = new String[0];
 
-		new BatheInitializerProcessor().process(args, this.getClass().getClassLoader());
+		new BatheInitializerProcessor().process(args, null, this.getClass().getClassLoader());
 
 		assertThat(SampleInitializer.value).isEqualTo(true);
 		assertThat(SecondSampleInitializer.value).isEqualTo(false);
@@ -44,7 +44,7 @@ public class BatheInitializerProcessorTests {
 			}
 		};
 
-		bip.process(new String[0], null);
+		bip.process(new String[0], null, null);
 		return bip;
 	}
 
