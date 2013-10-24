@@ -121,7 +121,7 @@ public class BatheBooter {
     Thread.currentThread().setContextClassLoader(loader);
 
     try {
-      checkForInitializers(loader, passingArgs);
+      new BatheInitializerProcessor().process(passingArgs, loader);
 
       // Start the application
       exec(loader, jar, runnerClass, passingArgs);
@@ -129,15 +129,6 @@ public class BatheBooter {
       Thread.currentThread().setContextClassLoader(null);
 
       loader.close(); // supported in 1.7
-    }
-  }
-
-  //  Run any initializers.
-  protected void checkForInitializers(ClassLoader loader, String[] args) {
-	  ServiceLoader<BatheInitializer> services = ServiceLoader.load(BatheInitializer.class, loader);
-
-    for(BatheInitializer initializer: services) {
-	    initializer.initialize(args);
     }
   }
 
