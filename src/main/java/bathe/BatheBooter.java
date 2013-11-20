@@ -109,17 +109,21 @@ public class BatheBooter {
 
     Thread.currentThread().setContextClassLoader(loader);
 
-    try {
-      new BatheInitializerProcessor().process(passingArgs, runnerClass, loader);
-
-      // Start the application
-      exec(loader, jar, runnerClass, passingArgs);
-    } finally {
-      Thread.currentThread().setContextClassLoader(null);
-
-      loader.close(); // supported in 1.7
-    }
+    runWithLoader(loader, jar, runnerClass, passingArgs);
   }
+
+	public void runWithLoader(URLClassLoader loader, File runnable, String runnerClass, String[] args) throws IOException {
+		try {
+			new BatheInitializerProcessor().process(args, runnerClass, loader);
+
+			// Start the application
+			exec(loader, runnable, runnerClass, args);
+		} finally {
+			Thread.currentThread().setContextClassLoader(null);
+
+			loader.close(); // supported in 1.7
+		}
+	}
 
 
 	private boolean tryRunMethod(Class<?> runner, File runnable, String[] args) throws InvocationTargetException, IllegalAccessException {
@@ -151,7 +155,7 @@ public class BatheBooter {
    * Runs the main runner class in the specified class loader, passing in
    * the WAR being run as well as the specified command line arguments.
    */
-  protected void exec(ClassLoader loader, File runnable, String runnerClass, String[] args) {
+  public void exec(ClassLoader loader, File runnable, String runnerClass, String[] args) {
     try {
       Class<?> runner = Class.forName(runnerClass, true, loader);
 
