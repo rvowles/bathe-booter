@@ -32,7 +32,7 @@ public class BatheInitializerProcessor {
 
 	//  Run any initializers.
 	public void process(String[] args, String jumpClass, ClassLoader loader) {
-		collectInitializers(loader);
+		collectInitializers(loader == null ? Thread.currentThread().getContextClassLoader() : loader);
 
 		for(BatheInitializer initializer: initializers) {
 			if (System.getProperty(BATHE_INITIALIZER_DISABLE + initializer.getName()) == null) {

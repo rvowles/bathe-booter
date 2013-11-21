@@ -110,18 +110,20 @@ public class BatheBooter {
     Thread.currentThread().setContextClassLoader(loader);
 
     runWithLoader(loader, jar, runnerClass, passingArgs);
+
+	  loader.close(); // supported in 1.7
   }
 
 	public void runWithLoader(URLClassLoader loader, File runnable, String runnerClass, String[] args) throws IOException {
+		ClassLoader localLoader = loader == null ? Thread.currentThread().getContextClassLoader() : loader;
+
 		try {
-			new BatheInitializerProcessor().process(args, runnerClass, loader);
+			new BatheInitializerProcessor().process(args, runnerClass, localLoader);
 
 			// Start the application
-			exec(loader, runnable, runnerClass, args);
+			exec(localLoader, runnable, runnerClass, args);
 		} finally {
 			Thread.currentThread().setContextClassLoader(null);
-
-			loader.close(); // supported in 1.7
 		}
 	}
 
