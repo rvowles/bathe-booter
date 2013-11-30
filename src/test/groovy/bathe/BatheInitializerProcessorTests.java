@@ -22,7 +22,7 @@ public class BatheInitializerProcessorTests {
 		new BatheInitializerProcessor().process(args, null, this.getClass().getClassLoader());
 
 		assertThat(SampleInitializer.value).isEqualTo(true);
-		assertThat(SecondSampleInitializer.value).isEqualTo(false);
+		assertThat(SecondSampleInitializer.value).isEqualTo(true);
 	}
 
 	@Test

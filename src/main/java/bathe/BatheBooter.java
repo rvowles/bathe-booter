@@ -118,7 +118,7 @@ public class BatheBooter {
 		ClassLoader localLoader = loader == null ? Thread.currentThread().getContextClassLoader() : loader;
 
 		try {
-			new BatheInitializerProcessor().process(args, runnerClass, localLoader);
+			args = new BatheInitializerProcessor().process(args, runnerClass, localLoader);
 
 			// Start the application
 			exec(localLoader, runnable, runnerClass, args);
