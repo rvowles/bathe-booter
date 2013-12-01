@@ -16,13 +16,14 @@ public class BatheInitializerProcessorTests {
 	public void simpleTests() {
 
 		SampleInitializer.value = false;
+		SecondSampleInitializer.value = false;
 
 		String[] args = new String[0];
 
 		new BatheInitializerProcessor().process(args, null, this.getClass().getClassLoader());
 
 		assertThat(SampleInitializer.value).isEqualTo(true);
-		assertThat(SecondSampleInitializer.value).isEqualTo(true);
+		assertThat(SecondSampleInitializer.value).isEqualTo(false);
 	}
 
 	@Test
@@ -51,6 +52,7 @@ public class BatheInitializerProcessorTests {
 	@Test
 	public void disableTests() {
 		SampleInitializer.value = false;
+		SecondSampleInitializer.value = false;
 
 		System.setProperty(BatheInitializerProcessor.BATHE_INITIALIZER_DISABLE + new SampleInitializer().getName(), "spaghetti");
 
