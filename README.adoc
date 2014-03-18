@@ -1,0 +1,21 @@
+= Bathe-Booter
+
+This artefact is designed for use with the Bathe Plugin or something that mimics its behaviour.
+
+It will allow you to start an application where all of the dependencies are offset inside the single zip file,
+creating a series of classpaths such as:
+
+[source]
+----
+ myfile.jar#!/WEB-INF/classes
+ myfile.jar#!/WEB-INF/jars/spring-core-3.2.4.RELEASE/
+----
+
+_etc_
+
+It looks in the +META-INF/MANIFEST.MF+ for the +Jump-Class+ (unless one is passed) and if it finds it, also looks
+for the +Implementation-Version+ of that manifest and sets it as a system property, allowing you to build versioned
+APIs and resources that reflect the application version (lmz-version uses this).
+
+It also provides you with an interface +BatheInitializer+ that allows you to create services that will run and
+initialize before your main application runs simply by including them on the classpath. All your parameters are passed.
