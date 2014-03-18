@@ -32,8 +32,9 @@ public class BatheBooter {
   private static final String MAIN_OVERRIDE = "-R";
   private static final String JUMP_CLASS = "Jump-Class";
   protected static final String BATHE_EXTERNAL_CLASSPATH = "bathe.externalClassPath";
+	private static final String BATHE_IMPLEMENTATION_VERSION = "Bathe-Implementation-Version";
 
-  protected String runnerClass;
+	protected String runnerClass;
   protected File jar;
   protected String[] passingArgs;
   protected boolean foundClassDir = false;
@@ -83,7 +84,11 @@ public class BatheBooter {
         String jumpGate = attr.getValue(JUMP_CLASS);
 
         if (jumpGate != null) {
+
           runnerClass = jumpGate;
+
+	        System.setProperty(BATHE_IMPLEMENTATION_VERSION, attr.getValue(Attributes.Name.IMPLEMENTATION_VERSION));
+
           break;
         }
       }
