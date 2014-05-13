@@ -244,6 +244,9 @@ public class BatheBooter {
           String name = entry.getName();
 
           if (entry.isDirectory()) {
+            //stop problem where the WEB_JAR_PREFIX/WEB_CLASSES_PREFIX is included as an entry
+            if (name.equals(WEB_JAR_PREFIX) || name.equals(WEB_CLASSES_PREFIX)) continue;
+
             if (name.startsWith(WEB_JAR_PREFIX)) {
               String partName = name.substring(webJarLength);
 
