@@ -243,20 +243,19 @@ public class BatheBooter {
           JarEntry entry = i.nextElement();
           String name = entry.getName();
 
-          if (entry.isDirectory()) {
-            //stop problem where the WEB_JAR_PREFIX/WEB_CLASSES_PREFIX is included as an entry
-            if (name.equals(WEB_JAR_PREFIX) || name.equals(WEB_CLASSES_PREFIX)) continue;
+          //stop problem where the WEB_JAR_PREFIX/WEB_CLASSES_PREFIX is included as an entry
+          if (name.equals(WEB_JAR_PREFIX) || name.equals(WEB_CLASSES_PREFIX)) continue;
 
-            if (name.startsWith(WEB_JAR_PREFIX)) {
-              String partName = name.substring(webJarLength);
+          if (name.startsWith(WEB_JAR_PREFIX)) {
+            String partName = name.substring(webJarLength);
 
-              String jarDir = partName.substring(0, partName.indexOf('/'));
+            String jarDir = partName.substring(0, partName.indexOf('/'));
 
-              if (!jars.contains(jarDir))
-                jars.add(jarDir);
-            } else if (name.startsWith(WEB_CLASSES_PREFIX)) {
-              foundClassDir = true;
+            if (!jars.contains(jarDir)) {
+              jars.add(jarDir);
             }
+          } else if (name.startsWith(WEB_CLASSES_PREFIX)) {
+            foundClassDir = true;
           }
         }
       } finally {
