@@ -18,12 +18,11 @@ import java.util.jar.Manifest;
 
 
 /**
- * This class takes the jar/war in the classpath, figures out what the classpath is, creates a new URL class loader,
+ * This class expects SpringLoader to have loaded the classpath.
+ *
  * loads any BatheInitializer services in the right order according to precedence and then jumps in.
  *
  * author: Richard Vowles - http://gplus.to/RichardVowles
- *
- * Thanks to Karsten Sperling for the idea of embedding the jars into subdirectories and loading them into the URL classpath from there.
  */
 public class BatheBooter {
   private static final String WEB_JAR_PREFIX = "WEB-INF/jars/";
@@ -37,7 +36,6 @@ public class BatheBooter {
 	protected String runnerClass;
   protected File jar;
   protected String[] passingArgs;
-  protected boolean foundClassDir = false;
 
   protected void parseCommandLine(String[] args) {
     List<String> appArguments = new ArrayList<String>();
@@ -109,17 +107,19 @@ public class BatheBooter {
 
     parseCommandLine(args);
 
-    List<String> jarOffsets = determineJarOffsets(jar);
-    URLClassLoader loader = createUrlClassLoader(jar, jarOffsets);
+	  String externalClasspath = System.getProperty(BATHE_EXTERNAL_CLASSPATH);
 
-    Thread.currentThread().setContextClassLoader(loader);
+	  // support external classpath
+	  ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
 
-    runWithLoader(loader, jar, runnerClass, passingArgs);
+	  if (externalClasspath != null) {
+		  classLoader = new URLClassLoader(new URL[] {new File(externalClasspath).toURI().toURL()}, classLoader);
+	  }
 
-	  loader.close(); // supported in 1.7
+    runWithLoader(classLoader, jar, runnerClass, passingArgs);
   }
 
-	public void runWithLoader(URLClassLoader loader, File runnable, String runnerClass, String[] args) throws IOException {
+	public void runWithLoader(ClassLoader loader, File runnable, String runnerClass, String[] args) throws IOException {
 		ClassLoader localLoader = loader == null ? Thread.currentThread().getContextClassLoader() : loader;
 
 		try {
@@ -184,6 +184,7 @@ public class BatheBooter {
   }
 
   /**
+<<<<<<< Updated upstream
    * Creates a URL class loader out of the specified library offsets within the war file
    */
   protected URLClassLoader createUrlClassLoader(File war, List<String> libraries) {
@@ -268,6 +269,8 @@ public class BatheBooter {
   }
 
   /**
+=======
+>>>>>>> Stashed changes
    * This may end up needing to be more sophisticated if there is more than one jar on the command line. We would need to looking through
    * for the one with this class in it.
    *
