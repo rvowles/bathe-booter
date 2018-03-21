@@ -25,7 +25,13 @@ public class BatheInitializerProcessor {
 		initializers = new TreeSet<>(new Comparator<BatheInitializer>() {
 			@Override
 			public int compare(BatheInitializer o1, BatheInitializer o2) {
-				return Integer.compare(o1.getOrder(), o2.getOrder());
+				int orderCompare = Integer.compare(o1.getOrder(), o2.getOrder());
+
+				if (orderCompare == 0) {
+					orderCompare = o1.getName().compareTo(o2.getName());
+				}
+
+				return orderCompare;
 			}
 		});
 	}
