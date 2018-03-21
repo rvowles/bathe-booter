@@ -17,7 +17,7 @@ import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 
 
-/**
+/*
  * This class expects SpringLoader to have loaded the classpath.
  *
  * loads any BatheInitializer services in the right order according to precedence and then jumps in.
@@ -158,7 +158,7 @@ public class BatheBooter {
 		return true;
 	}
 
-	/**
+	/*
    * Runs the main runner class in the specified class loader, passing in
    * the WAR being run as well as the specified command line arguments.
    */
@@ -202,7 +202,7 @@ public class BatheBooter {
     throw new RuntimeException("Cannot get the runnable artifact");
   }
 
-  /**
+  /*
    * Returns the URLs that make up the system class path.
    */
   protected URL[] getSystemClassPath() {

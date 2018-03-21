@@ -3,11 +3,7 @@ package bathe;
 /**
  * This allows packages to implement a service based on this. You should include the bathe booter as a provided
  * resource in your project.
- *
- * ws.username=blah
- * ws.password=blah2
- * ws.endpoint=http:/akshdkasjdhkjdhsak?username=${ws.username}&password=${ws.password}
- *
+ **
  * author: Richard Vowles - http://gplus.to/Richard.Vowles
  */
 public interface BatheInitializer {
@@ -29,7 +25,7 @@ public interface BatheInitializer {
 	 * Called when it is this initializer's turn to run.
 	 *
 	 * @param args - the arguments passed to the application (rather than the boioter)
-	 * @returns - the args that will be passed on to the next initializer. This allows initializers to consume arguments
+	 * @return - the args that will be passed on to the next initializer. This allows initializers to consume arguments
 	 */
 	public String[] initialize(String args[], String jumpClass);
 }
