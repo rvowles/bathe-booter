@@ -3,14 +3,15 @@
 	<modelVersion>4.0.0</modelVersion>
 	<parent>
 		<groupId>com.bluetrainsoftware.parent</groupId>
-		<artifactId>java-parent</artifactId>
+		<artifactId>central-parent</artifactId>
 		<version>1.2</version>
 	</parent>
 	<groupId>com.bluetrainsoftware.bathe</groupId>
 	<artifactId>bathe-booter</artifactId>
-	<version>2.3-SNAPSHOT</version>
+	<version>3.1-SNAPSHOT</version>
 	<packaging>jar</packaging>
 	<name>Bathe Booter</name>
+  
 	<dependencies>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -32,7 +33,77 @@
 	</dependencies>
 
 	<build>
-		<plugins>
+    <plugins>
+      <plugin>
+        <groupId>com.bluetrainsoftware.maven</groupId>
+        <artifactId>release-pom</artifactId>
+        <version>1.5</version>
+        <executions>
+          <execution>
+            <id>generate-dep-list</id>
+            <phase>prepare-package</phase>
+            <goals>
+              <goal>release-pom</goal>
+            </goals>
+            <configuration>
+              <useMaven2>false</useMaven2>
+              <outputFile>${project.build.outputDirectory}/META-INF/maven/released-pom.xml</outputFile>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>2.22.1</version>
+        <configuration>
+          <useSystemClassLoader>true</useSystemClassLoader>
+          <useManifestOnlyJar>false</useManifestOnlyJar>
+          <failIfNoTests>false</failIfNoTests>
+          <includes>
+            <include>**/*Test.java</include>
+            <include>**/*Tests.java</include>
+          </includes>
+          <excludes>
+            <exclude>**/*$*</exclude>
+            <exclude>**/*IntegrationTest.java</exclude>
+            <exclude>**/*IntegrationTests.java</exclude>
+            <exclude>**/*FunctionalTest.java</exclude>
+            <exclude>**/*FunctionalTests.java</exclude>
+          </excludes>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <artifactId>maven-source-plugin</artifactId>
+        <version>2.2.1</version>
+        <executions>
+          <execution>
+            <id>attach-sources</id>
+            <phase>package</phase>
+            <goals>
+              <goal>jar-no-fork</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <version>2.7</version>
+        <executions>
+          <execution>
+            <id>attach-javadocs</id>
+            <goals>
+              <goal>jar</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      
 			<plugin>
 				<groupId>org.sonatype.plugins</groupId>
 				<artifactId>nexus-staging-maven-plugin</artifactId>

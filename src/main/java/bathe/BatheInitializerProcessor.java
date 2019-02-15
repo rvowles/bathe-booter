@@ -1,51 +1,54 @@
 package bathe;
 
-import java.util.*;
+import java.util.Comparator;
+import java.util.ServiceLoader;
+import java.util.Set;
+import java.util.TreeSet;
 
 /**
  * Collects all the initializers as services and runs them in the order they are specified, allowing them
  * to be skipped. This is done before jumping to the specified jump-class.
- *
+ * <p>
  * author: Richard Vowles - http://gplus.to/Richard.Vowles
  */
 public class BatheInitializerProcessor {
-	public static final String BATHE_INITIALIZER_DISABLE = "bathe.disable.";
+  public static final String BATHE_INITIALIZER_DISABLE = "bathe.disable.";
 
-	protected Set<BatheInitializer> initializers;
+  protected Set<BatheInitializer> initializers;
 
-	protected void collectInitializers(ClassLoader loader) {
-		ServiceLoader<BatheInitializer> services = ServiceLoader.load(BatheInitializer.class, loader);
+  public BatheInitializerProcessor() {
+    initializers = new TreeSet<>(new Comparator<BatheInitializer>() {
+      @Override
+      public int compare(BatheInitializer o1, BatheInitializer o2) {
+        int orderCompare = Integer.compare(o1.getOrder(), o2.getOrder());
 
-		for(BatheInitializer initializer: services) {
-			initializers.add(initializer);
-		}
-	}
+        if (orderCompare == 0) {
+          orderCompare = o1.getName().compareTo(o2.getName());
+        }
 
-	public BatheInitializerProcessor() {
-		initializers = new TreeSet<>(new Comparator<BatheInitializer>() {
-			@Override
-			public int compare(BatheInitializer o1, BatheInitializer o2) {
-				int orderCompare = Integer.compare(o1.getOrder(), o2.getOrder());
+        return orderCompare;
+      }
+    });
+  }
 
-				if (orderCompare == 0) {
-					orderCompare = o1.getName().compareTo(o2.getName());
-				}
+  protected void collectInitializers(ClassLoader loader) {
+    ServiceLoader<BatheInitializer> services = ServiceLoader.load(BatheInitializer.class, loader);
 
-				return orderCompare;
-			}
-		});
-	}
+    for (BatheInitializer initializer : services) {
+      initializers.add(initializer);
+    }
+  }
 
-	//  Run any initializers.
-	public String[] process(String[] args, String jumpClass, ClassLoader loader) {
-		collectInitializers(loader == null ? Thread.currentThread().getContextClassLoader() : loader);
+  //  Run any initializers.
+  public String[] process(String[] args, String jumpClass, ClassLoader loader) {
+    collectInitializers(loader == null ? Thread.currentThread().getContextClassLoader() : loader);
 
-		for(BatheInitializer initializer: initializers) {
-			if (System.getProperty(BATHE_INITIALIZER_DISABLE + initializer.getName()) == null) {
-				args = initializer.initialize(args, jumpClass);
-			}
-		}
+    for (BatheInitializer initializer : initializers) {
+      if (System.getProperty(BATHE_INITIALIZER_DISABLE + initializer.getName()) == null) {
+        args = initializer.initialize(args, jumpClass);
+      }
+    }
 
-		return args;
-	}
+    return args;
+  }
 }

@@ -1,19 +1,17 @@
 package bathe;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.List;
 import java.util.jar.Attributes;
-import java.util.jar.JarEntry;
-import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 
 
@@ -25,20 +23,22 @@ import java.util.jar.Manifest;
  * author: Richard Vowles - http://gplus.to/RichardVowles
  */
 public class BatheBooter {
-  private static final String WEB_JAR_PREFIX = "WEB-INF/jars/";
-  private static final String WEB_CLASSES_PREFIX = "WEB-INF/classes/";
 
+  protected static final String BATHE_EXTERNAL_CLASSPATH = "bathe.externalClassPath";
   private static final String MAIN_OVERRIDE = "-R";
   private static final String JUMP_CLASS = "Jump-Class";
-  protected static final String BATHE_EXTERNAL_CLASSPATH = "bathe.externalClassPath";
-	private static final String BATHE_IMPLEMENTATION_VERSION = "Bathe-Implementation-Version";
+  private static final String BATHE_IMPLEMENTATION_VERSION = "Bathe-Implementation-Version";
 
-	protected String runnerClass;
+  protected String runnerClass;
   protected File jar;
   protected String[] passingArgs;
 
+  public static void main(String[] args) throws IOException {
+    new BatheBooter().run(args);
+  }
+
   protected void parseCommandLine(String[] args) {
-    List<String> appArguments = new ArrayList<String>();
+    List<String> appArguments = new ArrayList<>();
 
     // Process command line arguments
     for (String arg : args) {
@@ -85,7 +85,7 @@ public class BatheBooter {
 
           runnerClass = jumpGate;
 
-	        System.setProperty(BATHE_IMPLEMENTATION_VERSION, attr.getValue(Attributes.Name.IMPLEMENTATION_VERSION));
+          System.setProperty(BATHE_IMPLEMENTATION_VERSION, attr.getValue(Attributes.Name.IMPLEMENTATION_VERSION));
 
           break;
         }
@@ -97,68 +97,64 @@ public class BatheBooter {
 
   }
 
-  public static void main(String []args) throws IOException {
-    new BatheBooter().run(args);
-  }
-
-  public void run(String []args) throws IOException {
+  public void run(String[] args) throws IOException {
     // Find the WAR and load the corresponding properties
     jar = getRunFile();
 
     parseCommandLine(args);
 
-	  String externalClasspath = System.getProperty(BATHE_EXTERNAL_CLASSPATH);
+    String externalClasspath = System.getProperty(BATHE_EXTERNAL_CLASSPATH);
 
-	  // support external classpath
-	  ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+    // support external classpath
+    ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
 
-	  if (externalClasspath != null) {
-		  classLoader = new URLClassLoader(new URL[] {new File(externalClasspath).toURI().toURL()}, classLoader);
-	  }
+    if (externalClasspath != null) {
+      classLoader = new URLClassLoader(new URL[]{new File(externalClasspath).toURI().toURL()}, classLoader);
+    }
 
     runWithLoader(classLoader, jar, runnerClass, passingArgs);
   }
 
-	public void runWithLoader(ClassLoader loader, File runnable, String runnerClass, String[] args) throws IOException {
-		ClassLoader localLoader = loader == null ? Thread.currentThread().getContextClassLoader() : loader;
+  public void runWithLoader(ClassLoader loader, File runnable, String runnerClass, String[] args) {
+    ClassLoader localLoader = loader == null ? Thread.currentThread().getContextClassLoader() : loader;
 
-		try {
-			args = new BatheInitializerProcessor().process(args, runnerClass, localLoader);
+    try {
+      args = new BatheInitializerProcessor().process(args, runnerClass, localLoader);
 
-			// Start the application
-			exec(localLoader, runnable, runnerClass, args);
-		} finally {
-			Thread.currentThread().setContextClassLoader(null);
-		}
-	}
+      // Start the application
+      exec(localLoader, runnable, runnerClass, args);
+    } finally {
+      Thread.currentThread().setContextClassLoader(null);
+    }
+  }
 
 
-	private boolean tryRunMethod(Class<?> runner, File runnable, String[] args) throws InvocationTargetException, IllegalAccessException {
-		try {
-			Method method = runner.getMethod("run", File.class, String[].class);
+  private boolean tryRunMethod(Class<?> runner, File runnable, String[] args) throws InvocationTargetException, IllegalAccessException {
+    try {
+      Method method = runner.getMethod("run", File.class, String[].class);
 
-			method.invoke(null, runnable, args);
-		} catch (NoSuchMethodException e) {
-			return false;
-		}
+      method.invoke(null, runnable, args);
+    } catch (NoSuchMethodException e) {
+      return false;
+    }
 
-		return true;
-	}
+    return true;
+  }
 
-	private boolean tryMainMethod(Class<?> runner, String[] args) throws InvocationTargetException, IllegalAccessException {
-		try {
-			Method method = runner.getMethod("main", String[].class);
+  private boolean tryMainMethod(Class<?> runner, String[] args) throws InvocationTargetException, IllegalAccessException {
+    try {
+      Method method = runner.getMethod("main", String[].class);
 
-			// force to Object so it doesn't  try to use ...
-			method.invoke(null, (Object)args);
-		} catch (NoSuchMethodException e) {
-			return false;
-		}
+      // force to Object so it doesn't  try to use ...
+      method.invoke(null, (Object) args);
+    } catch (NoSuchMethodException e) {
+      return false;
+    }
 
-		return true;
-	}
+    return true;
+  }
 
-	/*
+  /*
    * Runs the main runner class in the specified class loader, passing in
    * the WAR being run as well as the specified command line arguments.
    */
@@ -166,11 +162,11 @@ public class BatheBooter {
     try {
       Class<?> runner = Class.forName(runnerClass, true, loader);
 
-	    if (!tryRunMethod(runner, runnable, args)) {
-		    if (!tryMainMethod(runner, args)) {
-			    throw new RuntimeException("Cannot find run or main method in " + runnerClass);
-		    }
-	    }
+      if (!tryRunMethod(runner, runnable, args)) {
+        if (!tryMainMethod(runner, args)) {
+          throw new RuntimeException("Cannot find run or main method in " + runnerClass);
+        }
+      }
 
     } catch (ClassNotFoundException e) {
       throw new RuntimeException("The class you are trying to run can not be found on the classpath: " + runnerClass + ", " + loader.toString(), e);
@@ -184,32 +180,36 @@ public class BatheBooter {
   }
 
   /*
-   * This may end up needing to be more sophisticated if there is more than one jar on the command line. We would need to looking through
-   * for the one with this class in it.
+   * This is a fairly optimistic implementation of searching for the current jar/war file
+   * currently being executed.
    *
    * @return The main file we are running
    */
   protected File getRunFile() {
-    for (URL url : getSystemClassPath()) {
-      if ("file".equals(url.getProtocol()) && (url.getPath().endsWith(".war") || url.getPath().endsWith(".jar"))) {
-        try {
-          return new File(url.toURI());
-        } catch (URISyntaxException e) {
-          /* ignored */
-        }
-      }
-    }
-    throw new RuntimeException("Cannot get the runnable artifact");
-  }
 
-  /*
-   * Returns the URLs that make up the system class path.
-   */
-  protected URL[] getSystemClassPath() {
-    ClassLoader loader = ClassLoader.getSystemClassLoader();
-    if (!(loader instanceof URLClassLoader))
-      throw new RuntimeException("System class loader does not expose classpath URLs");
-    return ((URLClassLoader) loader).getURLs();
+    // Grab the currently running war/jar location optimistically.
+    final URL jarUrl = BatheBooter.class
+      .getProtectionDomain()
+      .getCodeSource()
+      .getLocation();
+
+    try {
+
+      // Convert from a URL to a URI within the safe confines of a try-catch block
+      URI jarUri = jarUrl.toURI();
+
+      // If there's a nested reference, un-nest it and trim any "!"s at the end
+      if (jarUri.getScheme().matches("^[jw]ar$")) {
+        jarUri = new URI(jarUri.getSchemeSpecificPart().replaceAll("!.+$", ""));
+      }
+
+      // Attempt to turn into a file.
+      return new File(jarUri);
+
+    } catch (URISyntaxException | IllegalArgumentException error) {
+      throw new RuntimeException("Cannot get the runnable artifact file from " + jarUrl.toString(), error);
+    }
+
   }
 
 

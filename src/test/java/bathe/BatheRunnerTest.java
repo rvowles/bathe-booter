@@ -1,11 +1,6 @@
 package bathe;
 
-import bathe.BatheBooter;
-import org.junit.Before;
 import org.junit.Test;
-
-import java.util.Arrays;
-import java.util.List;
 
 import static org.fest.assertions.Assertions.*;
 
@@ -13,10 +8,10 @@ import static org.fest.assertions.Assertions.*;
  * author: Richard Vowles - http://gplus.to/RichardVowles
  */
 public class BatheRunnerTest {
-	@Test
-	public void wibble() {
+  @Test
+  public void wibble() {
 
-	}
+  }
 //  @Before
 //  public void initial() {
 //    System.clearProperty(BatheBooter.BATHE_JAR_ORDER_OVERRIDE);
