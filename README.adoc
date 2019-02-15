@@ -2,6 +2,8 @@
 
 This artefact is designed for use with the Bathe Plugin or Spring Boot Loader (as the initial loading class).
 
+As fo Version 3.x we support Java 11 loading (contributed by https://github.com/Tzrlk)
+
 As of Version 2.x, we use the Spring Boot Loader to manage classes, so the Bathe Booter becomes a simplier
 set of behaviours:
 
