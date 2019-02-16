@@ -8,7 +8,7 @@
 	</parent>
 	<groupId>com.bluetrainsoftware.bathe</groupId>
 	<artifactId>bathe-booter</artifactId>
-	<version>3.1</version>
+	<version>3.2-SNAPSHOT</version>
 	<packaging>jar</packaging>
 	<name>Bathe Booter</name>
   
@@ -117,8 +117,4 @@
 			</plugin>
 		</plugins>
 	</build>
-
-  <scm>
-    <tag>bathe-booter-3.1</tag>
-  </scm>
 </project>
