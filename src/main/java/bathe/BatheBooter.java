@@ -193,24 +193,31 @@ public class BatheBooter {
       .getCodeSource()
       .getLocation();
 
+    return resolveJarFile(jarUrl);
+
+  }
+
+  /*
+   * Semi-safely extracts an actual file path from a jar class path URL.
+   */
+  protected File resolveJarFile(URL classPathUrl) {
     try {
 
       // Convert from a URL to a URI within the safe confines of a try-catch block
-      URI jarUri = jarUrl.toURI();
+      URI jarUri = classPathUrl.toURI();
 
       // If there's a nested reference, un-nest it and trim any "!"s at the end
       if (jarUri.getScheme().matches("^[jw]ar$")) {
-        jarUri = new URI(jarUri.getSchemeSpecificPart().replaceAll("!.+$", ""));
+        final String strippedUri = jarUri.getRawSchemeSpecificPart().replaceAll("!.+$", "");
+        jarUri = new URI(strippedUri);
       }
 
       // Attempt to turn into a file.
       return new File(jarUri);
 
     } catch (URISyntaxException | IllegalArgumentException error) {
-      throw new RuntimeException("Cannot get the runnable artifact file from " + jarUrl.toString(), error);
+      throw new RuntimeException("Cannot get the runnable artifact file from " + classPathUrl.toString(), error);
     }
-
   }
-
 
 }
