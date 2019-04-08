@@ -13,14 +13,20 @@ public class BatheBooterTest {
     Assert.assertEquals(new File(expected), resolvedFile);
   }
 
+  public String prefixWhenNotOnWindows() {
+    return ":".equals(File.pathSeparator) ? "/" : "";
+  }
+
   @Test
   public void testResolveJarFileWithSpaces() throws Exception {
-    testResolveJarFile("jar:file:/C:/test/test%20file.jar!/", "C:/test/test file.jar");
+    testResolveJarFile("jar:file:/C:/test/test%20file.jar!/",
+      prefixWhenNotOnWindows() + "C:/test/test file.jar");
   }
 
   @Test
   public void testResolveJarFileWithoutSpaces() throws Exception {
-    testResolveJarFile("jar:file:/C:/test/test-file.jar!/", "C:/test/test-file.jar");
+    testResolveJarFile("jar:file:/C:/test/test-file.jar!/",
+      prefixWhenNotOnWindows() + "C:/test/test-file.jar");
   }
 
 }
